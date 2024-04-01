@@ -1,4 +1,9 @@
 #include "systemcalls.h"
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <fcntl.h>
+
 
 /**
  * @param cmd the command to execute with system()
@@ -17,7 +22,7 @@ bool do_system(const char *cmd)
  *   or false() if it returned a failure
 */
 
-    return true;
+    return system(cmd) == EXIT_SUCCESS;
 }
 
 /**
@@ -47,7 +52,9 @@ bool do_exec(int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    //command[count] = command[count];
+
+    va_end(args);
 
 /*
  * TODO:
@@ -58,10 +65,16 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
-
-    va_end(args);
-
-    return true;
+    
+    const pid_t pid = fork();
+    if (pid == 0) {
+        execv(command[0], command);
+        exit(EXIT_FAILURE);
+    } else {
+        siginfo_t info;
+        waitid(P_PID, pid, &info, WEXITED);
+        return info.si_status == EXIT_SUCCESS;
+    }
 }
 
 /**
@@ -80,10 +93,12 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
         command[i] = va_arg(args, char *);
     }
     command[count] = NULL;
+    
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    //command[count] = command[count];
 
+    va_end(args);
 
 /*
  * TODO
@@ -93,7 +108,17 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *
 */
 
-    va_end(args);
-
-    return true;
+    const pid_t pid = fork();
+    if (pid == 0) {
+        const int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+        if (fd < 0 || (dup2(fd, STDOUT_FILENO) < 0) || (close(fd) != 0)) {
+            exit(EXIT_FAILURE);
+        }
+        execv(command[0], command);
+        exit(EXIT_FAILURE);
+    } else {
+        siginfo_t info;
+        waitid(P_PID, pid, &info, WEXITED);
+        return info.si_status == EXIT_SUCCESS;
+    }
 }
