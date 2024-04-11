@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-if [[ $# < 2 ]]
+if [[ $# -lt 2 ]]
 then
     echo "Not enough parameters specified"
     exit 1
