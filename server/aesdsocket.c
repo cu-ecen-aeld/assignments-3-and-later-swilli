@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
     struct sockaddr_in local;
     local.sin_family = AF_INET;
     local.sin_port = htons(port_number);
-    inet_aton("127.0.0.1", (struct in_addr*) &local.sin_addr.s_addr);
+    inet_aton("0.0.0.0", (struct in_addr*) &local.sin_addr.s_addr);
     
     if (bind(sock_fd, (struct sockaddr*) &local, sizeof(local)) < 0) {
         syslog_then_exit("bind");
